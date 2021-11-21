@@ -1,0 +1,133 @@
+#### Procesamiento de datos tarea 4 - Fatima Lusangi & Javier Ortiz ####
+
+# 1. Carga de paquetes:
+
+pacman::p_load(tidyverse, 
+               sjmisc,
+               srvyr, 
+               dplyr, 
+               tidyr,
+               magrittr,
+               kableExtra,
+               sjPlot)
+
+# 2. Carga de base de datos: ---------------------------
+
+datos <- read.csv("input/data/julio-2021.csv", sep=";", dec = ",",
+                  encoding = "UTF-8", stringsAsFactors = F)
+
+
+
+# 3.Seleccionar y explorar variables:  ------------------
+
+# Empresas:
+# a) ID_Empresa: Identificador de empresa
+# b) M1: Suspensión temporal del contrato de trabajo por acto de autoridad
+# c) M2: Suspensión temporal del contrato de trabajo por medio de un pacto (individual o colectivo)
+# d) M4: Pacto de reducción temporal de la jornada laboral (hasta en un 50% de su jornada de trabajo)
+# e) M5: Pacto de reducción temporal de remuneraciones por mutuo acuerdo
+# f) M7: Trabajo remoto desde casa, Trabajo a distancia o Teletrabajo
+# g) c: Seccion economica de la empresa CIIU
+# h) t: Tamaño de la empresa
+
+# Personas:
+# a) M1_NT: Número de trabajadores en la empresa impactados (en el mes de referencia) con la modalidad Suspensión temporal del contrato de trabajo por acto de autoridad
+# b) M2_NT: Número de trabajadores en la empresa impactados (en el mes de referencia) con la modalidad Suspensión temporal del contrato de trabajo por medio de un Pacto (individual o colectivo)
+# c) M4_NT: Número de trabajadores en la empresa impactados (en el mes de referencia) con la modalidad Pacto de reducción temporal de la jornada laboral (hasta en un 50% de su jornada de trabajo)
+# d) M5_NT: Número de trabajadores en la empresa impactados (en el mes de referencia) con la modalidad Pacto de reducción temporal de remuneraciones por mutuo acuerdo
+# e) M7_NT: Número de trabajadores en la empresa impactados (en el mes de referencia) con la modalidad Trabajo remoto desde casa, Trabajo a distancia o Teletrabajo
+# f) NT_t: Número de trabajadores que ocuparon puestos de trabajo en la empresa en el mes de referencia. Personas con un vínculo contractual con la empresa y que en el mes de referencia recibieron remuneración por horas de trabajo efectuadas
+
+# Generales:
+# ano: Año de referencia
+# mes: mes de referencia
+# FE: Factor de expansión suavizado y calibrado según tasa de respuesta del Módulo COVID-19 (corresponde ne este caso al peso de cada empresa en la estimación ancional)
+
+datos_proc <- select(datos, ID_Empresa, M1, M2, M4, M5, M7, c, t, M1_NT, M2_NT, M4_NT, M5_NT, M7_NT, NT_t, ano, mes, FE)
+
+view_df(datos_proc)
+
+# 3.1 Explorar variable categoricas: --------------------
+
+frq(datos_proc$c)
+frq(datos_proc$t)
+frq(datos_proc$M1)
+frq(datos_proc$M2)
+frq(datos_proc$M4)
+frq(datos_proc$M5)
+frq(datos_proc$M7)
+
+#3.2 Explorar variables cuantitativas: ------------------
+
+descr(datos_proc$M1_NT)
+descr(datos_proc$M2_NT)
+descr(datos_proc$M4_NT)
+descr(datos_proc$M5_NT)
+descr(datos_proc$M7_NT)
+descr(datos_proc$NT_t)
+
+
+# 4. Transformacion, creacion y recodificacion de variables -----------------------
+
+# Creación de variable estayp: Suma de las variables M1 (Supensión temporal por acto de autoridad) y M2 (suspención temporal por pacto) 
+
+datos_proc <- datos_proc %>% 
+  mutate(estayp = case_when(M1 == 'Si' | M2 == 'Si' ~ 'Si',
+                            TRUE ~ NA_character_) )
+
+# Creación de variable pstayp: suma de variables M1_NT Y M2_NT (número de personas suspendidos temporalmente por acto y por pacto)
+
+datos_proc <- datos_proc %>% #Especificamos que trabajaremos con el dataframe datos
+  rowwise() %>% #Especificamos que agruparemos por filas
+  mutate(pstayp = sum(M1_NT, M2_NT, na.rm = T)) %>%  #Creamos una nueva variable llamada pstayp, sumando los valores de M1_NT, M2_NT e ignoramos los NA para cada fila 
+ungroup()
+head(datos)
+
+# Creación de variable M4M5_NT
+
+datos_proc <- datos_proc %>% #Especificamos que trabajaremos con el dataframe datos
+  rowwise() %>% #Especificamos que agruparemos por filas
+  mutate(M4M5_NT = sum(M4_NT, M5_NT, na.rm = T)) %>%  #Creamos una nueva variable llamada pstayp, sumando los valores de M1_NT, M2_NT e ignoramos los NA para cada fila 
+  ungroup()
+head(datos)
+
+
+# Recodificar variable de c a sector económico:
+
+datos_proc <- datos_proc %>% 
+  mutate(sector_economico = recode(c, "B" = "B-Mineria", 
+                                   "C" = "C-Industria manufacturera",
+                                   "D" = "D-Suministro de electricidad y gas",
+                                   "E" = "E-Suministro de agua y gestión de desechos",
+                                   "F" = "F-Construccion",
+                                   "G" = "G-Comercio",
+                                   "H" = "H-Transporte y almacenamiento",
+                                   "I" = "I-Alojamiento y servicio de comida",
+                                   "J" = "J-Informacion y comunicaciones",
+                                   "K" = "K-Actividades financieras y de seguro",
+                                   "L" = "L-Actividades inmobiliarias",
+                                   "M" = "M-Actividades profesionales cientificas y tecnicas",
+                                   "N" = "N-Actividades de servicios administrativos y de apoyo",
+                                   "O" = "O-Administracion publica",
+                                   "P" = "P-Enseñanza",
+                                   "Q" = "Q-Actividades de la atencion de la salud humana y de asistencia social",
+                                   "R" = "R-Actividades artisticas de entretenimiento y recreativas"))
+
+# Recodificar variable t (tamaño de la empresa):
+
+datos_proc <- datos_proc %>% 
+  mutate(tamano_empresas = case_when(t == 1 ~ "Pequeñas empresas",
+                                     t == 2 ~ "Medianas empresas",
+                                     t == 3 ~ "Grandes empresas",
+                                     TRUE ~ NA_character_) )
+
+
+
+#corroboramos las nuevas etiquetas
+frq(datos_proc$t)
+frq(datos_proc$tamano_empresas)
+
+# Guardamos los datos_proc.Rds
+
+saveRDS(datos_proc, file = "output/data/datos_proc.rds")
+
