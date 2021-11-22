@@ -289,11 +289,10 @@ descr(data_proc$edad)
 
 # creacion de edad en tramos (dejando a grupos desde lo 18 años)
 data_proc <- data_proc %>% 
-  mutate(edad_tramo = case_when(edad >= 18 & edad <=39 ~ "18 a 39 años",
-                                edad >= 40 & edad <=  59 ~ "40 a 59 años",
-                                edad >= 60 ~ "60+",
+  mutate(edad_tramo = case_when(edad >= 18 & edad <=29 ~ "Adulto joven (18 a 29 anos)",
+                                edad >= 30 & edad <=  59 ~ "Adulto (30 a 59 anos)",
+                                edad >= 60 ~ "Adulto mayor (60+)",
                                 TRUE ~ NA_character_))
-
 
 #comprobamos 
 frq(data$edad)
