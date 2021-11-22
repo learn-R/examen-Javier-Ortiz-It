@@ -1,0 +1,151 @@
+## Procesamiento de datos Tarea 3
+
+
+## 1. Cargar paquetes 
+
+pacman::p_load(tidyverse, haven, sjmisc, sjPlot, magrittr, car)
+
+## 2. Cargar BBDD
+
+ene2021 <- haven::read_sav("https://www.ine.cl/docs/default-source/ocupacion-y-desocupacion/bbdd/2021/spss/ene-2021-06-mjj.sav?sfvrsn=99b49265_4&amp;download=true")
+
+## 3. Seleccion de variables
+# Sociodemograficas: 
+#     sexo, 
+#     edad numerica 
+#     edad en tramos, 
+#     region, 
+#     cine (nivel educacional)
+# 
+# Ocupacion: 
+#     activ 
+#     b1 (ciuo) 
+#     b14_rev4cl_caenes(ciuu)
+#     b15_1 (tamaño de la empresa)
+#     variable de informalidad se debe crear a partir de la variable ocup_form
+# 
+# Condiciones laborales: 
+#     e7 (tipo de jornada)
+# 
+# Analisis COVID: 
+#   subempleo: c9_otro_covid
+#   desocupacion: e22 (crear variable con dos categorias: razones no covid y razones covid)
+#   inactividad: e12_orig 
+#   despidos: e23
+#
+# Variables obligatorias: 
+#   identificador de personas: idrph
+#   año: ano_trimestre 
+
+
+## 4. Seleccion de variables a utilizar en la BBDD recortada
+
+ene2021 <- select(ene2021, 
+                     edad, 
+                     sexo, 
+                     region, 
+                     nivel_educacional = cine, 
+                     activ, 
+                     ocup_form, 
+                     b1, 
+                     b14_rev4cl_caenes, 
+                     b15_1, 
+                     c9_otro_covid, 
+                     e7, 
+                     e12, 
+                     e22, 
+                     e23, 
+                     ano_trimestre, 
+                     idrph)
+
+## 5. Transformacion, recodificacion y creacion de variables solicitadas
+
+# Creacion de variable: edad en tramos
+
+# 5.1 Variable sociodemograficas: edad en tramos
+
+ene2021 %>% 
+  mutate(edad_tramo = case_when(edad >= 18 & edad <=39 ~ "18 a 39 años",
+                                edad >= 40 & edad <=  59 ~ "40 a 59 años",
+                                edad >= 60 ~ "60+",
+                                TRUE ~ NA_character_)) %>% 
+  select(edad, edad_tramo)
+
+# guardamos en el objeto/data frame
+
+ene2021 <- ene2021 %>% 
+  mutate(edad_tramo = case_when(edad >= 18 & edad <=39 ~ "18 a 39 años",
+                                edad >= 40 & edad <=  59 ~ "40 a 59 años",
+                                edad >= 60 ~ "60+",
+                                TRUE ~ NA_character_))
+
+# 5.2 Variables de Ocupacion: creacion de variable de informalidad
+
+ene2021 %>% 
+  mutate(ocup_informal = case_when(ocup_form == 2 ~ "ocupados informales",
+                                   TRUE ~ NA_character_)) %>% 
+  select(ocup_form,ocup_informal)
+
+#  guardamos en el objeto/data frame
+
+ene2021<-ene2021 %>% 
+  mutate(ocup_informal = case_when(ocup_form == 2 ~ "ocupados informales",
+                                   TRUE ~ NA_character_))
+
+# calculo de tasa de ocupación informal (TOI):Corresponde al número en porcentaje de ocupados informales respecto de los ocuapdos totales.
+# Para realizar el calculo TOI necesitamos el número de "ocupados informales"y de "ocupados"
+
+frq(ene2021$ocup_form) #para conocer los datos que necesitamos para la TOI.
+
+TOI=((10591/36700)*100) # *tasa de ocupacion informal se estimo despues de filtrar los datos por edad
+#                         y categoria solicitda en las instrucciones, consultar punto 7 de este script.   
+
+# 5.3 Analisis COVID-19: Crear Variable de desocupacion por razones covid y no covid a 
+#     partir de variable e22(¿Por qué razón ya no tiene ese empleo, 
+#     negocio o actividad por cuenta propia?)
+
+ene2021 %>% 
+  mutate(e22_covid = ifelse(e22 %in% c(1,2,3,4,5,6,7), "no covid",
+                            ifelse(e22 %in% c(8,9), "covid", NA_character_))) %>% 
+  select(e22, e22_covid)
+
+# guardamos en el objeto/data frame
+
+ene2021 <- ene2021 %>%
+  mutate(e22_covid = ifelse(e22 %in% c(1,2,3,4,5,6,7), "no covid",
+                            ifelse(e22 %in% c(8,9), "covid", NA_character_)))
+  
+
+# 6. Procesamiento de NA 
+
+# Visualizacion de codigos de la BBDD para ver que categorias NA
+
+sjPlot::view_df(ene2021)
+
+# Agrupacion de NA
+
+ene2021$nivel_educacional <- car::recode(ene2021$nivel_educacional, "999=NA")
+ene2021$ocup_form <- car::recode(ene2021$ocup_form, "999=NA")
+ene2021$b1 <- car::recode(ene2021$b1, "999=NA")
+ene2021$b15_1 <- car::recode(ene2021$b15_1, "c(88,89)=NA")
+ene2021$e7 <- car::recode(ene2021$e7, "c(3,88,99)=NA") # La categoria 3 corresponde a la opcion "cualquiera", 
+#                                                        por motivos de este trabajo se decide agruparla como NA
+#                                                        para facilitar la interpretacion de las categorias "jornada completa" y "jornada parcial"
+ene2021$e23 <- car::recode(ene2021$e23, "c(88,99)=NA")
+
+# 7. Filtro de casos
+
+ene2021 <- ene2021 %>%  
+  filter(is.na(b14_rev4cl_caenes)|b14_rev4cl_caenes!=21, edad>=18) 
+
+# Corroborar el data frame procesado
+
+sjPlot::view_df(ene2021)
+
+# 8. Guardar Data frame ya procesado
+
+saveRDS(ene2021, file = "input/data/datos_proc.rds")
+
+
+
+

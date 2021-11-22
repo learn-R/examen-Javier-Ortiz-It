@@ -1,0 +1,149 @@
+
+## Tarea 2 - Fatima Lusangi / Javier Ortiz
+
+## 0. Cargar paquetes 
+
+pacman::p_load(tidyverse,
+               tidyr,
+               dplyr,
+               sjmisc,
+               car,
+               sjPlot,
+               haven,
+               magrittr)
+
+## 1. Cargar base de datos en formato SPSS
+
+datos2019 <- read_sav("input/data/ene-2019-02.sav")
+datos2021 <- read_sav("input/data/ene-2021-02.sav")
+
+## 2. Visualizacion y exploracion general de los datos
+
+names(datos2019)
+names(datos2021)
+
+## 3. Seleccion de variables a utilizar y creacion de los objetos (BBDD recortadas)
+ 
+datos_proc2019 <- select(datos2019, sexo, edad, cine, cae_general, cae_especifico, activ, c2_1_1, c2_1_3)
+
+datos_proc2021 <- select(datos2021, sexo, edad, cine, cae_general, cae_especifico, activ, c2_1_1, c2_1_3)
+
+
+## 4. Recodificacion de las variables a utilizar
+
+## 4.1 Filtro Personas en edad de trabajar y Edad en tramos
+
+datos_proc2019 <- datos_proc2019 %>%
+  filter(edad >= 15) %>% 
+   mutate(edad_en_tramos = case_when(edad > 15 & edad <= 39 ~ "joven",
+                                     edad > 40 & edad <= 64 ~ "adulto",
+                                     edad > 65 ~ "adulto mayor",
+                                     TRUE ~ NA_character_))
+
+datos_proc2021 <- datos_proc2021 %>%
+  filter(edad >= 15) %>% 
+  mutate(edad_en_tramos = case_when(edad > 15 & edad <= 39 ~ "joven",
+                                    edad > 40 & edad <= 64 ~ "adulto",
+                                    edad > 65 ~ "adulto mayor",
+                                    TRUE ~ NA_character_))
+
+# verificar la correcta creacion de la variable: edad en tramos
+
+frq(datos_proc2019$edad_en_tramos)
+frq(datos_proc2021$edad_en_tramos)
+
+## 4.2 Sexo
+
+datos_proc2019$sexo <- as.factor(datos_proc2019$sexo)
+filter(datos_proc2019, sexo == "mujer")
+filter(datos_proc2019, sexo == "hombre")
+
+datos_proc2019 <- datos_proc2019 %>%
+  mutate(sexo = dplyr::recode(sexo, "2" = "mujer", "1" = "hombre"))
+
+datos_proc2021$sexo <- as.factor(datos_proc2021$sexo)
+filter(datos_proc2021, sexo == "mujer")
+filter(datos_proc2021, sexo == "hombre")
+
+datos_proc2021 <- datos_proc2021 %>%
+  mutate(sexo = dplyr::recode(sexo, "2" = "mujer", "1" = "hombre"))
+
+# verificar la correcta recodificacion de la variable: sexo
+
+frq(datos_proc2019$sexo)
+frq(datos_proc2021$sexo)
+
+## 4.3 Nivel educacional
+
+# Visualizamos las variables y sus categorias (especificamente la variable cine)
+
+sjPlot::view_df(datos_proc2019)
+sjPlot::view_df(datos_proc2021)
+
+datos_proc2019 <- datos_proc2019 %>%
+  mutate(nivel_educacional = case_when(cine <=3 ~ "basica o menos incompleta",
+                                       cine > 3 & cine <=5 ~ "basica y media completa",
+                                       cine > 5 & cine <=9 ~ "superior completa",
+                                       TRUE ~ NA_character_))
+
+datos_proc2021 <- datos_proc2021 %>%
+  mutate(nivel_educacional = case_when(cine <=3 ~ "basica o menos incompleta",
+                                       cine > 3 & cine <=5 ~ "basica y media completa",
+                                       cine > 5 & cine <=9 ~ "superior completa",
+                                       TRUE ~ NA_character_))
+
+
+#verificar la correcta recodificacion de la variable: nivel educacional 
+
+frq(datos_proc2019$nivel_educacional)
+frq(datos_proc2021$nivel_educacional)
+
+## 6. Creacion del indice sumativo
+
+# 6.1 eliminar caos peridos 
+
+datos_proc2019$c2_1_1 <- car::recode(datos_proc2019$c2_1_1, "c (888, 999) = NA") 
+datos_proc2019$c2_1_1 <- car::recode(datos_proc2019$c2_1_3, "c (888, 999) = NA")
+
+datos_proc2021$c2_1_3 <- car::recode(datos_proc2021$c2_1_1, "c (888, 999) = NA") 
+datos_proc2021$c2_1_3 <- car::recode(datos_proc2021$c2_1_3, "c (888, 999) = NA")
+
+## 6.2 Creacion variable indice sumativo
+
+datos_proc2019 <- datos_proc2019 %>%
+  rowwise() %>%
+  mutate(ind_horas = sum(c2_1_1, c2_1_3))
+
+datos_proc2021 <- datos_proc2021 %>%
+  rowwise() %>%
+  mutate(ind_horas = sum(c2_1_1, c2_1_3))
+
+# Verificar la creacion de los indices en ambas BBDD
+head(datos_proc2019)
+head(datos_proc2021)
+
+## 7. Creacion de variable cae_corregido
+
+datos_proc2019 <- datos_proc2019 %>%
+  mutate(cae_corregido = case_when(cae_especifico <= 7 ~ "ocupados",
+                                   cae_especifico > 7 & cae_especifico <= 9 ~ "desocupados",
+                                   cae_especifico > 9 & cae_especifico <= 28 ~ "fuera de la fuerza de trabajo",
+                                   TRUE ~ NA_character_))
+  
+datos_proc2021 <- datos_proc2021 %>%
+  mutate(cae_corregido = case_when(cae_especifico <= 7 ~ "ocupados",
+                                   cae_especifico > 7 & cae_especifico <= 9 ~ "desocupados",
+                                   cae_especifico > 9 & cae_especifico <= 28 ~ "fuera de la fuerza de trabajo",
+                                   TRUE ~ NA_character_))
+  
+  
+## 8. Union de BBDD
+
+ene_unida <- merge(x = datos_proc2019,
+                   y = datos_proc2021,
+                   all = T)
+
+## 9. Guardar ambas BBDD y la BBDD unida
+
+save(datos_proc2019, datos_proc2021, ene_unida, file = "output/data/datos_proc.RData")
+

@@ -2,24 +2,21 @@
 
 ## 1. Carga de paquetes: -----------------------------------
 
-pacman::p_load(tidyverse, 
-               sjmisc,
-               srvyr,
-               magrittr,
-               sjPlot,
-               dplyr,
-               car,
-               sjlabelled)
+pacman::p_load(tidyverse, # para abrir la base de datos original (rds)
+               sjmisc, #para explorar datos
+               magrittr, #para hacer uso de operadores
+               sjPlot, #para visualizar libro de codigos
+               dplyr, #para realizar la manipulacion de datos y su exploracion
+               car, #para utilizar las funciones mutate y car::recode y trasnformar las variables
+               sjlabelled) #para agregar etiquetas a variables y dejarlas debidamente organizadas
 
-## 2. Carga de base de datos: ------------------------------
+## 2. Carga de base de datos original: ------------------------------
 
 data <- read_rds(url("https://github.com/learn-R/examen-Javier-Ortiz-It/raw/main/input/data/Latinobarometro_2020.rds"))
                      
-
 ## 3. Explorar datos:--------------------------------------                 
 
 view_df(data)
-
 
 ## 4. Seleccion de variables: -----------------------------
 
@@ -34,8 +31,8 @@ view_df(data)
 
 # Paricipacion politica participativa
 
+#P62N.A Grado de acuerdo con: Las protestas
 #P55ST.B: Acción política: Asistir a manifestaciones autorizadas
-#P59N.F: Dispuesto a salir a marchar y protestar por: Una sociedad con mas igualdad
 
 # valoracion de la democracia
 
@@ -46,21 +43,24 @@ view_df(data)
 # Variables demograficas 
 
 #IDENPA: identificacion del pais
-#edad
+#eda
+#edad en tramos
 #sexo
 
+# seleccion de variables
 data_proc <- data %>% 
   select(nc_partidos = p13st_g,
          p62st_b,
          p56n,
          p55st_b,
-         p59n_f,
+         p62n_a,
          p22stm_b,
          p20stm_c,
          satisfaccion_demo = P11STGBS_A,
          pais = idenpa,
          edad,
-         sexo)
+         sexo,
+         ponderador = wt)
 
 # Exploracipn de variables seleccionadas
 view_df(data_proc)
@@ -69,17 +69,17 @@ frq(data_proc$nc_partidos)
 frq(data_proc$p62st_b)
 frq(data_proc$p56n)
 frq(data_proc$p55st_b)
-frq(data_proc$p59n_f)
+frq(data_proc$p62n_a)
 frq(data_proc$p22stm_b)
 frq(data_proc$p20stm_c)
 frq(data_proc$satisfaccion_demo)
 frq(data_proc$pais)
-sjmisc::descr(data_proc$edad)# PROBLEMAS CON LOS DESCRIPTIVOS DE EDAD
 frq(data_proc$sexo)
 
 
 # 5. Transformacion de variables:----------------------
 
+# politica representativa/deliverativa
 # Confianza en los Partidos politicos
 data_proc <- data_proc %>% 
   mutate(nc_partidos = car::recode(.$nc_partidos,
@@ -100,18 +100,18 @@ data_proc <- data_proc %>%
                                               'No sabe',
                                               'No contesta'))) 
 # Comprobamos
+frq(data$p13st_g)
 frq(data_proc$nc_partidos)
 
 # Las elecciones ofrecen a los votantes una real opción de elegir entre partidos y candidatos
-
 data_proc <- data_proc %>% 
   mutate(p62st_b = car::recode(.$p62st_b,
                                recodes = c("1 ='Muy de acuerdo';
                                            2 = 'De acuerdo';
                                            3 = 'En desacuerdo';
                                            4 = 'Muy en desacuerdo';
-                                           -1 = 'No sabe';
-                                           -2 = 'No contesta';
+                                           -1 = 'NA';
+                                           -2 = 'NA';
                                            -3 = 'NA';
                                            -4 = 'NA';
                                            -5 = 'NA'"),
@@ -119,15 +119,13 @@ data_proc <- data_proc %>%
                                levels = c('Muy en desacuerdo',
                                           'En desacuerdo',
                                           'De acuerdo',
-                                          'Muy de acuerdo',
-                                          'No sabe',
-                                          'No contesta')))
+                                          'Muy de acuerdo')))
 
 #comrpobamos
+frq(data$p62st_b)
 frq(data_proc$p62st_b)
 
 #Mejor forma de actuar para que Ud. y el país avancen más
-
 data_proc <- data_proc %>% 
   mutate(p56n = car::recode(.$p56n,
                             recodes = c("1 = 'Hay que votar siempre';
@@ -148,10 +146,33 @@ data_proc <- data_proc %>%
                                        'No hay que hacer nada')))
 
 # Comprobemos
+frq(data$p56n)
 frq(data_proc$p56n)
 
-#Acción política: Asistir a manifestaciones autorizadas
+#politica participativa
+#Grado de acuerdo con las protestas
+data_proc <- data_proc %>% 
+  mutate(p62n_a = car::recode(.$p62n_a,
+                              recodes = c("1 = 'Muy de acuerdo';
+                                          2 = 'De acuerdo';
+                                          3 = 'En desacuerdo';
+                                          4 = 'Muy en desacuerdo';
+                                          -1 = 'NA';
+                                          -2 = 'NA';
+                                          -3 = 'NA';
+                                          -4= 'NA';
+                                          -5 = 'NA'"),
+                              as.factor = T,
+                              levels = c('Muy en desacuerdo',
+                                         'En desacuerdo',
+                                         'De acuerdo',
+                                         'Muy de acuerdo')))
 
+#comprobamos
+frq(data$p62n_a)
+frq(data_proc$p62n_a)
+
+#Acción política: Asistir a manifestaciones autorizadas
 data_proc <- data_proc %>% 
   mutate(p55st_b = car::recode(.$p55st_b,
                                recodes = c("1 = 'Lo ha realizado';
@@ -168,14 +189,11 @@ data_proc <- data_proc %>%
                                           'Nunca lo haria')))
 
 #Comprobamos
+frq(data$p55st_b)
 frq(data_proc$p55st_b)
 
-##Dispuesto a salir a marchar y protestar por: Una sociedad con mas igualdad
-
-#!!!!!!!!!!!!!!!!!!
-
+## valoracion de la democracia
 # No me importaría que un gobierno no democrático llegara al poder si resuelve los problemas
-
 data_proc <- data_proc %>% 
   mutate(p22stm_b = car::recode(.$p22stm_b,
                                 recodes = c("1 = 'Muy de acuerdo';
@@ -193,10 +211,10 @@ data_proc <- data_proc %>%
                                            'Muy de acuerdo')))
 
 #Comprobemos
+frq(data$p22stm_b)
 frq(data_proc$p22stm_b)
 
-#P20STM.C La democracia permite que se solucionen los problemas que tenemos
-
+#La democracia permite que se solucionen los problemas que tenemos
 data_proc <- data_proc %>% 
   mutate(p20stm_c = car::recode(.$p20stm_c,
                                 recodes = c("1 = 'Muy de acuerdo';
@@ -214,11 +232,10 @@ data_proc <- data_proc %>%
                                            'Muy de acuerdo')))
 
 #Comprobemos
-frq(data)
+frq(data$p20stm_c)
 frq(data_proc$p20stm_c)
 
 #Satisfacción con la democracia
-
 data_proc <- data_proc %>% 
   mutate(satisfaccion_demo = car::recode(.$satisfaccion_demo,
                                          recodes = c("1 = 'Muy satisfecho';
@@ -240,6 +257,47 @@ data_proc <- data_proc %>%
 #Comprobemos
 frq(data$P11STGBS_A)
 frq(data_proc$satisfaccion_demo)
+
+## variables demograficas
+#Sexo
+data_proc <- data_proc %>% 
+  mutate(sexo = car::recode(.$sexo,
+                            recodes = c("1 = 'Hombre';
+                                        2 = 'Mujer'"),
+                            as.factor = T))
+
+#comprobamos
+frq(data$sexo)
+frq(data_proc$sexo)
+
+#edad numerica
+data_proc <- data_proc %>% 
+  mutate(edad = car::recode(.$edad,
+                            recodes = c("-1 = 'NA';
+                                        -2 = 'NA';
+                                        -3 = 'NA';
+                                        -4 = 'NA';
+                                        -5 = 'NA'"),
+                            as.numeric = T))
+
+#filtramos desde los 18 años
+data_proc <- filter(data_proc, edad >= 18)
+
+#Comprobemos
+frq(data$edad) #Edad estaba originalmente como variable de tipo caracter
+descr(data_proc$edad)
+
+# creacion de edad en tramos (dejando a grupos desde lo 18 años)
+data_proc <- data_proc %>% 
+  mutate(edad_tramo = case_when(edad >= 18 & edad <=39 ~ "18 a 39 años",
+                                edad >= 40 & edad <=  59 ~ "40 a 59 años",
+                                edad >= 60 ~ "60+",
+                                TRUE ~ NA_character_))
+
+
+#comprobamos 
+frq(data$edad)
+frq(data_proc$edad_tramo)
 
 # Pais
 data_proc <- data_proc %>% 
@@ -288,25 +346,12 @@ data_proc <- data_proc %>%
                                        'Uruguay',
                                        'Venezuela')))
 
-#comprobamos
-frq(data$idenpa)
-frq(data_proc$pais)
+#realizamos el filtro para seleccionar solo los casos de Chile
+data_proc <- filter(data_proc, pais == "Chile")
 
-#Sexo
+#ponderador
 data_proc <- data_proc %>% 
-  mutate(sexo = car::recode(.$sexo,
-                            recodes = c("1 = 'Hombre';
-                                        2 = 'Mujer'"),
-                            as.factor = T))
-
-#comprobamos
-frq(data$sexo)
-frq(data_proc$sexo)
-
-#edad
-
-data_proc <- data_proc %>% 
-  mutate(edad = car::recode(.$edad,
+  mutate(ponderador = car::recode(.$ponderador,
                             recodes = c("-1 = 'NA';
                                         -2 = 'NA';
                                         -3 = 'NA';
@@ -314,25 +359,30 @@ data_proc <- data_proc %>%
                                         -5 = 'NA'"),
                             as.numeric = T))
 
-#Comprobemos
-frq(data$edad) #Edad estaba originalmente como variable de tipo caracter
-descr(data_proc$edad)
+#comprobamos
+frq(data$wt) #originalmente el ponderador era de tipo caracter
+descr(data_proc$ponderador)
 
 # 6. Agregar etiquetas a variables:--------------------------
-
 data_proc$nc_partidos <- set_label(data_proc$nc_partidos, 'Confianza en los Partidos Politicos')
 data_proc$p62st_b <- set_label(data_proc$p62st_b, 'Las elecciones ofrecen a los votantes una real opcion de elegir entre partidos y candidatos')
-data_proc$p56n <- set_label(data_proc$p55st_b, 'La mejor forma de actuar para que Ud. y el pais avancen mas')
+data_proc$p56n <- set_label(data_proc$p56n, 'La mejor forma de actuar para que Ud. y el pais avancen mas')
+data_proc$p62n_a <- set_label(data_proc$p62n_a, 'Grado de acuerdo con las protestas')
 data_proc$p55st_b <- set_label(data_proc$p55st_b, 'Accion politica: Asistir a manifestaciones autorizadas')
-data_proc$p59n_f <- set_label(data_proc$p59n_f) # falta esta
 data_proc$p22stm_b <- set_label(data_proc$p22stm_b, 'No me importaria que un gobierno no democratico llegara al poder si resuelve los problemas')
 data_proc$p20stm_c <- set_label(data_proc$p20stm_c, 'La democracia permite que se solucionen los problemas que tenemos')
 data_proc$satisfaccion_demo <- set_label(data_proc$satisfaccion_demo, 'Satisfaccion con la democracia')
 data_proc$pais <- set_label(data_proc$pais, 'Pais')
 data_proc$edad <- set_label(data_proc$edad, 'Edad')
+data_proc$edad_tramo <- set_label(data_proc$edad_tramo, 'Edad en tramos')
 data_proc$sexo <- set_label(data_proc$sexo, 'Sexo')
+data_proc$ponderador <- set_label(data_proc$ponderador, 'Ponderador')
 
 #revisemos libro de codigos de la base recortada
 view_df(data_proc,
         encoding = "UTF-8")
+
+# 7. Guardar base de datos procesada:-----------------------
+
+saveRDS(data_proc, file = "output/data/datos_proc.rds")
 
