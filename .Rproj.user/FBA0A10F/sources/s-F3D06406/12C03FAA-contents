@@ -1,7 +1,6 @@
 ## Procesamiento de datos Examen - Javier Ortiz ##
 
 ## 1. Carga de paquetes: -----------------------------------
-
 pacman::p_load(tidyverse, # para abrir la base de datos original (rds)
                sjmisc, #para explorar datos
                magrittr, #para hacer uso de operadores
@@ -60,7 +59,8 @@ data_proc <- data %>%
          pais = idenpa,
          edad,
          sexo,
-         ponderador = wt)
+         ponderador = wt,
+         numentre)
 
 # Exploracipn de variables seleccionadas
 view_df(data_proc)
@@ -79,7 +79,123 @@ frq(data_proc$sexo)
 
 # 5. Transformacion de variables:----------------------
 
-# politica representativa/deliverativa
+# a)numero de entrevista, ponderador y variables demograficas
+
+#numero de entrevista
+data_proc <- data_proc %>% 
+  mutate(numentre = car::recode(.$numentre,
+                                recodes = c("-1 = 'NA';
+                                        -2 = 'NA';
+                                        -3 = 'NA';
+                                        -4 = 'NA';
+                                        -5 = 'NA'"),
+                                as.numeric = T))
+
+#ponderador
+data_proc <- data_proc %>% 
+  mutate(ponderador = car::recode(.$ponderador,
+                                  recodes = c("-1 = 'NA';
+                                        -2 = 'NA';
+                                        -3 = 'NA';
+                                        -4 = 'NA';
+                                        -5 = 'NA'"),
+                                  as.numeric = T))
+
+#comprobamos
+frq(data$wt) #originalmente el ponderador era de tipo caracter
+descr(data_proc$ponderador)
+
+#edad y filtro para mayores de edad
+data_proc <- data_proc %>% 
+  mutate(edad = car::recode(.$edad,
+                            recodes = c("-1 = 'NA';
+                                        -2 = 'NA';
+                                        -3 = 'NA';
+                                        -4 = 'NA';
+                                        -5 = 'NA'"),
+                            as.numeric = T))
+
+#filtro de edad
+data_proc <- filter(data_proc, edad >= 18)
+
+#Comprobemos
+frq(data$edad) #Edad estaba originalmente como variable de tipo caracter
+descr(data_proc$edad)
+
+# creacion de edad en tramos (dejando a grupos desde lo 18 años)
+data_proc <- data_proc %>% 
+  mutate(edad_tramo = case_when(edad >= 18 & edad <=29 ~ "Adulto joven (18 a 29 anos)",
+                                edad >= 30 & edad <=  59 ~ "Adulto (30 a 59 anos)",
+                                edad >= 60 ~ "Adulto mayor (60+)",
+                                TRUE ~ NA_character_))
+
+#comprobamos 
+frq(data$edad)
+frq(data_proc$edad_tramo)
+
+#pais y filtro para casos de Chile
+# Pais
+data_proc <- data_proc %>% 
+  mutate(pais = car::recode(.$pais,
+                            recodes = c("32 = 'Argentina';
+                                        68 = 'Bolivia';
+                                        76 = 'Brasil';
+                                        152 = 'Chile';
+                                        170 = 'Colombia';
+                                        188 = 'Costa Rica';
+                                        214 = 'Rep. Dominicana';
+                                        218 = 'Ecuador';
+                                        222 = 'El Salvador';
+                                        320 = 'Guatemala';
+                                        340 = 'Honduras';
+                                        484 = 'Mexico';
+                                        558 = 'Nicaragua';
+                                        591 = 'Panama';
+                                        600 = 'Paraguay';
+                                        604 = 'Peru';
+                                        724 = 'NA';
+                                        858 = 'Uruguay';
+                                        862 = 'Venezuela';
+                                        -1 = 'NA';
+                                        -2 = 'NA';
+                                        -3 = 'NA';
+                                        -4 = 'NA';
+                                        -5 = 'NA'"),
+                            as.factor = T,
+                            levels = c('Argentina',
+                                       'Bolivia',
+                                       'Brasil',
+                                       'Chile',
+                                       'Colombia',
+                                       'Costa Rica',
+                                       'Rep. Dominicana',
+                                       'Ecuador',
+                                       'El Salvador',
+                                       'Guatemala',
+                                       'Honduras',
+                                       'Mexico',
+                                       'Nicaragua',
+                                       'Panama',
+                                       'Paraguay',
+                                       'Peru',
+                                       'Uruguay',
+                                       'Venezuela')))
+
+# Filtro para casos de Chile
+data_proc <- filter(data_proc, pais == "Chile")
+
+#Sexo 
+data_proc <- data_proc %>% 
+  mutate(sexo = car::recode(.$sexo,
+                            recodes = c("1 = 'Hombre';
+                                        2 = 'Mujer'"),
+                            as.factor = T,
+                            levels = c('Hombre',
+                                       'Mujer')))
+#comprobamos
+frq(data_proc$sexo)
+  
+# b) politica representativa/deliverativa
 # Confianza en los Partidos politicos
 data_proc <- data_proc %>% 
   mutate(nc_partidos = car::recode(.$nc_partidos,
@@ -149,7 +265,7 @@ data_proc <- data_proc %>%
 frq(data$p56n)
 frq(data_proc$p56n)
 
-#politica participativa
+# b)politica participativa
 #Grado de acuerdo con las protestas
 data_proc <- data_proc %>% 
   mutate(p62n_a = car::recode(.$p62n_a,
@@ -258,110 +374,6 @@ data_proc <- data_proc %>%
 frq(data$P11STGBS_A)
 frq(data_proc$satisfaccion_demo)
 
-## variables demograficas
-#Sexo
-data_proc <- data_proc %>% 
-  mutate(sexo = car::recode(.$sexo,
-                            recodes = c("1 = 'Hombre';
-                                        2 = 'Mujer'"),
-                            as.factor = T))
-
-#comprobamos
-frq(data$sexo)
-frq(data_proc$sexo)
-
-#edad numerica
-data_proc <- data_proc %>% 
-  mutate(edad = car::recode(.$edad,
-                            recodes = c("-1 = 'NA';
-                                        -2 = 'NA';
-                                        -3 = 'NA';
-                                        -4 = 'NA';
-                                        -5 = 'NA'"),
-                            as.numeric = T))
-
-#filtramos desde los 18 años
-data_proc <- filter(data_proc, edad >= 18)
-
-#Comprobemos
-frq(data$edad) #Edad estaba originalmente como variable de tipo caracter
-descr(data_proc$edad)
-
-# creacion de edad en tramos (dejando a grupos desde lo 18 años)
-data_proc <- data_proc %>% 
-  mutate(edad_tramo = case_when(edad >= 18 & edad <=29 ~ "Adulto joven (18 a 29 anos)",
-                                edad >= 30 & edad <=  59 ~ "Adulto (30 a 59 anos)",
-                                edad >= 60 ~ "Adulto mayor (60+)",
-                                TRUE ~ NA_character_))
-
-#comprobamos 
-frq(data$edad)
-frq(data_proc$edad_tramo)
-
-# Pais
-data_proc <- data_proc %>% 
-  mutate(pais = car::recode(.$pais,
-                            recodes = c("32 = 'Argentina';
-                                        68 = 'Bolivia';
-                                        76 = 'Brasil';
-                                        152 = 'Chile';
-                                        170 = 'Colombia';
-                                        188 = 'Costa Rica';
-                                        214 = 'Rep. Dominicana';
-                                        218 = 'Ecuador';
-                                        222 = 'El Salvador';
-                                        320 = 'Guatemala';
-                                        340 = 'Honduras';
-                                        484 = 'Mexico';
-                                        558 = 'Nicaragua';
-                                        591 = 'Panama';
-                                        600 = 'Paraguay';
-                                        604 = 'Peru';
-                                        724 = 'NA';
-                                        858 = 'Uruguay';
-                                        862 = 'Venezuela';
-                                        -1 = 'NA';
-                                        -2 = 'NA';
-                                        -3 = 'NA';
-                                        -4 = 'NA';
-                                        -5 = 'NA'"),
-                            as.factor = T,
-                            levels = c('Argentina',
-                                       'Bolivia',
-                                       'Brasil',
-                                       'Chile',
-                                       'Colombia',
-                                       'Costa Rica',
-                                       'Rep. Dominicana',
-                                       'Ecuador',
-                                       'El Salvador',
-                                       'Guatemala',
-                                       'Honduras',
-                                       'Mexico',
-                                       'Nicaragua',
-                                       'Panama',
-                                       'Paraguay',
-                                       'Peru',
-                                       'Uruguay',
-                                       'Venezuela')))
-
-#realizamos el filtro para seleccionar solo los casos de Chile
-data_proc <- filter(data_proc, pais == "Chile")
-
-#ponderador
-data_proc <- data_proc %>% 
-  mutate(ponderador = car::recode(.$ponderador,
-                            recodes = c("-1 = 'NA';
-                                        -2 = 'NA';
-                                        -3 = 'NA';
-                                        -4 = 'NA';
-                                        -5 = 'NA'"),
-                            as.numeric = T))
-
-#comprobamos
-frq(data$wt) #originalmente el ponderador era de tipo caracter
-descr(data_proc$ponderador)
-
 # 6. Agregar etiquetas a variables:--------------------------
 data_proc$nc_partidos <- set_label(data_proc$nc_partidos, 'Confianza en los Partidos Politicos')
 data_proc$p62st_b <- set_label(data_proc$p62st_b, 'Las elecciones ofrecen a los votantes una real opcion de elegir entre partidos y candidatos')
@@ -376,6 +388,7 @@ data_proc$edad <- set_label(data_proc$edad, 'Edad')
 data_proc$edad_tramo <- set_label(data_proc$edad_tramo, 'Edad en tramos')
 data_proc$sexo <- set_label(data_proc$sexo, 'Sexo')
 data_proc$ponderador <- set_label(data_proc$ponderador, 'Ponderador')
+data_proc$numentre <- set_label(data_proc$numentre, 'Id entrevista')
 
 #revisemos libro de codigos de la base recortada
 view_df(data_proc,

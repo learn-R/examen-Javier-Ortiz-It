@@ -1,0 +1,31 @@
+---
+title: 'La política institucional chilena y acción política post estallido: el valor
+  de la democracia en contexto de crísis'
+subtitle: "Sociología UAH / Prof. Valentina Andrade /Ayudantes: Nicolas Godoy & Dafne Jaime"
+author: "Javier Ortiz Iturra"
+date: "22-11-2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cargar paquetes, include=FALSE}
+pacman::p_load(tidyverse, 
+               sjmisc,
+               srvyr, 
+               dplyr, 
+               tidyr,
+               kableExtra,
+               sjPlot)
+```
+
+```{r cargar base de datos procesada, include=FALSE}
+data_proc <- read_rds(url("https://github.com/learn-R/examen-Javier-Ortiz-It/raw/main/output/data/datos_proc.rds"))
+```
+
+
+
+
+
