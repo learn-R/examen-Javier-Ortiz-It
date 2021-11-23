@@ -1,0 +1,4 @@
+"0","sjt.xtab(data_proc$satisfaccion_demo, data_proc$edad_tramo,  "
+"0","         title = ""Tabla 3. Satisfaccion con la democracia según tramo de edad"","
+"0","         show.col.prc=TRUE,"
+"0","         show.summary=FALSE)"

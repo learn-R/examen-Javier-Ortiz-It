@@ -1,0 +1,3 @@
+"0","data_obj_enc <- data_proc %>% "
+"0","  as_survey_design(ids = numentre, "
+"0","                   weights = ponderador)"
