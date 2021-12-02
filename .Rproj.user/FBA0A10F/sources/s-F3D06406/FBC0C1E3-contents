@@ -1,0 +1,234 @@
+---
+title: 'La política institucional chilena y acción política post estallido: el valor
+  de la democracia desde una perspectiva generacional en tiempos de crisis'
+subtitle: "Sociología UAH / Prof. Valentina Andrade /Ayudantes: Nicolas Godoy & Dafne Jaime"
+author: "Javier Ortiz Iturra"
+date: "22-11-2021"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cargar paquetes, include=FALSE, warning=FALSE}
+pacman::p_load(tidyverse, 
+               sjmisc,
+               srvyr, 
+               dplyr, 
+               tidyr,
+               kableExtra,
+               sjPlot)
+```
+
+```{r cargar base de datos procesada, include=FALSE, warning=FALSE}
+data_proc <- read_rds(url("https://github.com/learn-R/examen-Javier-Ortiz-It/raw/main/output/data/datos_proc.rds"))
+```
+
+```{r objeto encuesta, include=FALSE, warning=FALSE}
+data_obj_enc <- data_proc %>% 
+  as_survey_design(ids = numentre, 
+                   weights = ponderador)
+```
+
+
+### Resumen
+
+En este trabajo pretendemos problematizar el socavamiento de lo que se comprende como democracia deliberativa, principalmente desde su producto: el voto; cómo también de sus representaciones institucionales: los partidos políticos. Mas específicamente, nos referiremos a la situación de la democracia chilena en contexto de crisis post “estallido social” y cómo se evalúa generacionalmente la democracia, desde la política institucional y desde la acción política ligada a la protesta social.
+
+
+
+### Introducción
+
+Hoy en día, lo que entendemos y practicamos como democracia, se asemeja bastante a las ideas de Habermas, respecto de lo que se comprende como democracia deliberativa. La practica de la democracia deliberativa, presupone la existencia de ciudadanos, quienes a través de procesos del lenguaje pueden llegar a un entendimiento y así poder comprender la complejidad de la esfera pública, debido a la multiplicidad de sistemas sociales que hacen posible el mundo de la vida, tales como: el económico, el político, el cultural, el religioso, el simbólico y el lingüístico, en los que se encuentran atrapados los ciudadanos (Domínguez, 2013). 
+Así se ha construido todo un corpus teórico a partir de la comprensión de la democracia deliberativa como un mecanismo discursivo, en donde el proceso democratico se construye mediante la convergencia de las individualidades en decisiones colectivas (en el mejor de los casos vinculantes), pero que al final desembocan en una decisión individual: el voto. 
+
+Entonces podríamos indicar que:
+ 
+ _“La legitimidad de la democracia estriba en la capacidad o la oportunidad que tienen los sujetos de las decisiones colectivas de participar en deliberaciones efectivas; las exigencias tienen que justificarse de modo que la gente, reflexionando sobre ellas, pueda aceptarlas” (Cortina, 2007; pág. 145)._ 
+
+Desde este punto de partida, en este trabajo pretendemos identificar la evaluación de la democracia en el Chile post estallido social y en plena crisis sociopolítica. Esto desde dos dimensiones de análisis: La política representativa y la acción política ligada a las protestas desde un enfoque generacional. 
+
+
+```{r parametro sexo, include=FALSE}
+data_obj_enc %>% 
+  group_by(sexo,) %>% 
+  summarise(prop = survey_prop(vartype = "ci", na.rm = T)) %>%
+  mutate(prop = prop*100,
+         prop_low = prop_low*100,
+         prop_upp = prop_upp*100) %>% 
+  na.omit()
+```
+
+```{r parametro edad en tramos, include=FALSE}
+data_obj_enc %>% 
+  group_by(edad_tramo) %>% 
+  summarise(prop = survey_prop(vartype = "ci", na.rm = T)) %>%
+  mutate(prop = prop*100,
+         prop_low = prop_low*100,
+         prop_upp = prop_upp*100) %>% 
+  na.omit()
+```
+
+```{r parametro confianza en los partidos, include=FALSE}
+data_obj_enc %>% 
+  group_by(nc_partidos) %>% 
+  summarise(prop = survey_prop(vartype = "ci", na.rm = T)) %>%
+  mutate(prop = prop*100,
+         prop_low = prop_low*100,
+         prop_upp = prop_upp*100) %>% 
+  na.omit()
+```
+
+```{r parametro mejor forma para que el pais avance, include=FALSE}
+data_obj_enc %>% 
+  group_by(p56n) %>% 
+  summarise(prop = survey_prop(vartype = "ci", na.rm = T)) %>%
+  mutate(prop = prop*100,
+         prop_low = prop_low*100,
+         prop_upp = prop_upp*100) %>% 
+  na.omit()
+```
+
+```{r parametro asistir a manifestaciones, include=FALSE}
+data_obj_enc %>% 
+  group_by(p55st_b) %>% 
+  summarise(prop = survey_prop(vartype = "ci", na.rm = T)) %>%
+  mutate(prop = prop*100,
+         prop_low = prop_low*100,
+         prop_upp = prop_upp*100) %>% 
+  na.omit()
+```
+
+```{r no me imnportaria que un gobierno no democratico llegara al poder, include=FALSE}
+data_obj_enc %>% 
+  group_by(p22stm_b) %>% 
+  summarise(prop = survey_prop(vartype = "ci", na.rm = T)) %>%
+  mutate(prop = prop*100,
+         prop_low = prop_low*100,
+         prop_upp = prop_upp*100) %>% 
+  na.omit()
+```
+
+```{r parametro satisfaccion con la democracia, include=FALSE}
+data_obj_enc %>% 
+  group_by(satisfaccion_demo) %>% 
+  summarise(prop = survey_prop(vartype = "ci", na.rm = T)) %>%
+  mutate(prop = prop*100,
+         prop_low = prop_low*100,
+         prop_upp = prop_upp*100) %>% 
+  na.omit()
+```
+
+
+### Democracia deliverativa y representaciones institucionales de la democracia
+
+El Contexto de crisis social y política de Chile ha tenido una multiplicad de factores que hacen muy difícil su análisis, por sus implicancias temporales, históricas, políticas y por supuesto por sus implicancias social y culturales. Aquí no se pretende abordar un análisis del estallido social, sino de los mecanismos que deberían poder enmendar esta situación, que es más participación democrática. 
+Podríamos indicar que en Chile existe un fuerte distanciamiento de las representaciones institucionales de la política, principalmente desde los partidos políticos con la ciudadanía (Heiss, 2020; Cárdenas et.al, 2007). 
+
+
+```{r Grafico confianza en los partidos politicos, echo=FALSE}
+plot_frq(data_proc, nc_partidos,
+          title = "Gráfico 1. Confianza en los partidos politicos",
+          type = c("bar"),
+         show.n = F)
+```
+
+###### Fuente elaboracion propia en base a datos de Latinobarómetro 2020
+
+
+
+En este sentido, los mecanismos representativos, normativos o institucionales no dan el ancho ante las demandas de la ciudadanía chilena. La oferta del espectro político ha sufrido una transversal critica de la ciudadanía. Esto ha sido alimentado por los casos de corrupción de la Concertación y la Alianza, que se alzaron como los principales conglomerados políticos desde la vuelta a la democracia en 1990.
+Esto queda expuesto en el gráfico 1, en donde observamos como el 63% de la ciudadanía chilena no tiene ninguna confianza en los partidos políticos
+
+
+
+```{r Tabla cruzada Formas para que el pais y ud avancen mas, echo=FALSE}
+sjt.xtab(data_proc$p56n, data_proc$edad_tramo,  
+         title = "Tabla 1. Formas para que Chile progrese según tramo de edad",
+         show.col.prc=TRUE,
+         show.summary=FALSE)
+```
+###### Fuente elaboracion propia en base a datos de Latinobarómetro 2020
+
+
+
+La tabla 1 nos demuestra que la participación electoral es mas afín a grupos etarios adultos y adultos mayores, quienes con un 47% y un 69% respectivamente, creen que votando el país puede progresar. En cuanto a la participación electoral y la acción política de protestar los grupos adultos jóvenes se desmarcan de los otros dos grupos etarios, en donde con un 57% creen que protestando y votando puede progresar Chile. Ahora bien, se marca una tendencia en los grupos de edad al creer que Chile puede progresar solo a través de la protesta.
+
+
+
+### Politica participativa
+
+La protesta no parece ser una acción política destacable en los grupos más jóvenes, si se compara la participación electoral. A simple vista, pareciera que la democracia deliberativa sigue siendo un mecanismo que para la sociedad chilena es de fiar. Pero si ahondamos en las formas de participación política contestataria, los grupos de edad muestran una clara diferenciación.
+
+
+
+```{r Grafico Asistir a manifestaciones según grupo de edad, echo=FALSE}
+plot_xtab(data_proc$p55st_b, data_proc$edad_tramo, title = "Gráfico 2. Considerar asistir o haber asisitido a una manifestacion segun grupo de edad", show.n = F, show.total = F, margin = "col")
+```   
+
+###### Fuente elaboracion propia en base a datos de Latinobarómetro 2020
+
+
+
+Al respecto, el grafico 2 demuestra que la mitad de la población adulto joven ha participado de una manifestación, mientras que el 67% de la población adulta mayor no participaría de estas expresiones de la acción política. Hay que tener en cuenta las limitantes físicas de esta población, pero destaca que anteriormente hemos visto que este grupo se inclina por la participación electoral como forma de acción política. 
+
+
+
+##### Valoracion de la democracia
+
+
+Hemos podido observar cómo es la tendencia generacional de dos maneras de participación política, ahora nos queda observar cómo es que se varía la valoración de la democracia en función de esta perspectiva generacional.
+
+
+
+```{r Tabla cruzada Gobierno no-democratico según grupo de edad, echo=FALSE}
+sjt.xtab(data_proc$p22stm_b, data_proc$edad_tramo,  
+         title = "Tabla 2. Consideraria la llegada de un gobierno autoritario (si soluciona los problemas) según tramo de edad",
+         show.col.prc=TRUE,
+         show.summary=FALSE)
+```
+###### Fuente elaboracion propia en base a datos de Latinobarómetro 2020
+
+
+
+
+La tabla 2 nos muestra que la opción de un gobierno no-democrático no parece una opción demasiado extrema. Si bien, tanto los sectores de la ciudadanía que son más jóvenes (74%), los adultos (68%) y los adultos mayores (65%) están en desacuerdo o muy en desacuerdo con un gobierno no democrático, siguen existiendo sectores generacionales conservadores que ven en un gobierno no democrático una solución a los problemas que aparentemente la democracia no parece poder solucionar.  
+
+
+
+```{r Tabla cruzada Satisfaccion con la democracia según grupo de edad, echo=FALSE}
+sjt.xtab(data_proc$satisfaccion_demo, data_proc$edad_tramo,  
+         title = "Tabla 3. Satisfaccion con la democracia según tramo de edad",
+         show.col.prc=TRUE,
+         show.summary=FALSE)
+```
+###### Fuente elaboracion propia en base a datos de Latinobarómetro 2020
+
+
+
+La tabla 3 nos sintetiza la satisfacción generacional de la democracia. Aquí podemos observar una tendencia entre los tres grupos etarios, demostrando que el fortalecimiento de la democracia es un desafío sumamente complejo en la sociedad chilena y que es menester del Estado, de las instituciones públicas, de la clase política, como también de los mismos ciudadanos el poder fortalecerla. 
+
+
+
+### Conlcusiones
+
+La democracia chilena muestra diferentes tendencias desde la óptica de los grupos generacionales. Los más jóvenes siguen la lógica participativa y formas de acción política mas contestatarias que sus compatriotas más longevos. Pero, dentro de todo, la democracia deliberativa representada por el voto, no parece una opción demasiado debilitada, el problema parecieran ser los partidos políticos, aquella maquinaria institucional de la política que opera en función de los intereses de sus controladores políticos, casi siempre ligado a grupos financieros e intereses privados. Ahí podría plantearse una hipótesis de trabajo a futuro para poder hilar más fino respecto del vinculo entre partidos y ciudadanía.
+
+Otra conclusión relevante, es poder indagar en formas políticas participativas y vinculantes, que por ejemplo, puedan ser elementos a considerar dentro del debate constitucional en el Chile actual. Para esto, debemos saber converger entre las diversas generaciones, se debe buscar el punto de encuentro en el Chile futuro que le interesa tanto a los sectores más jóvenes, como también al Chile de corto plazo para mejorar la calidad de vida de los más viejos. Eso se puede lograr solo mediante el fortalecimiento de la democracia. 
+
+
+### Bibliografía
+
+- Cárdenas, Manuel, Parra, Luis, Picón, Juan, Pineda, Héctor, & Rojas, Rodrigo. (2007). Las Representaciones Sociales de la Política y la Democracia. Ultima década, 15(26), 53-78. https://dx.doi.org/10.4067/S0718-22362007000100004
+
+- Cortina, A. (2007). Democracia deliberativa. Contras-tes. Suplemento, núm. 2. 
+
+- Domínguez, H. (2013). Democracia deliberativa en Jürgen Habermas. Analecta Política, 4(5), 301 - 326. Recuperado a partir de https://revistas.upb.edu.co/index.php/analecta/article/view/2939.
+
+- Heiss, C. (2020). Chile: entre el estallido social y la pandemia. Análisis Carolina, (18), 1.
+
+
+
+
+

@@ -1,0 +1,1 @@
+"0","data_proc <- read_rds(url(""https://github.com/learn-R/examen-Javier-Ortiz-It/raw/main/output/data/datos_proc.rds""))"
